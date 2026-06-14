@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PYQ Topic Organiser – Study Smarter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- LANDING PAGE -->
+<div id="landing">
+  <nav>
+    <div class="logo"><span class="logo-dot"></span>PYQ Organiser</div>
+    <a href="#upload-section" class="nav-cta" onclick="scrollToUpload()">Get started</a>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-badge">Powered by Claude AI</div>
+    <h1>Stop flipping through<br><em>scattered questions.</em></h1>
+    <p class="hero-sub">Upload your previous year question papers. AI extracts every question, groups them by topic, and lets you solve chapter-by-chapter — the smart way to prepare.</p>
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="scrollToUpload()">Upload a paper <i class="ti ti-arrow-right"></i></button>
+      <button class="btn-ghost" onclick="loadDemo()">Try with demo paper</button>
+    </div>
+    <div class="hero-stats">
+      <div class="hstat"><strong>Auto</strong><span>Topic detection</span></div>
+      <div class="hstat"><strong>PDF &amp; Text</strong><span>Both supported</span></div>
+      <div class="hstat"><strong>Instant</strong><span>AI explanations</span></div>
+    </div>
+  </section>
+
+  <section class="how-it-works">
+    <h2>How it works</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-icon"><i class="ti ti-upload"></i></div>
+        <h3>Upload paper</h3>
+        <p>Paste question paper text or upload a text file from any exam</p>
+      </div>
+      <div class="step-arrow"><i class="ti ti-arrow-right"></i></div>
+      <div class="step">
+        <div class="step-icon"><i class="ti ti-brain"></i></div>
+        <h3>AI organises</h3>
+        <p>Claude reads all questions and groups them by topic automatically</p>
+      </div>
+      <div class="step-arrow"><i class="ti ti-arrow-right"></i></div>
+      <div class="step">
+        <div class="step-icon"><i class="ti ti-target"></i></div>
+        <h3>Solve smartly</h3>
+        <p>Study one topic at a time, track progress, and get instant explanations</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="upload-section" class="upload-section">
+    <h2>Upload your question paper</h2>
+    <p class="section-sub">Paste the text of your paper below — supports any subject or exam</p>
+
+    <div class="upload-card">
+      <div class="upload-tabs">
+        <button class="utab active" onclick="switchUploadTab('paste', this)"><i class="ti ti-clipboard-text"></i> Paste text</button>
+        <button class="utab" onclick="switchUploadTab('file', this)"><i class="ti ti-file-upload"></i> Upload file</button>
+      </div>
+
+      <div id="paste-tab">
+        <textarea id="paste-area" placeholder="Paste your question paper here...
+
+Example:
+1. What is dynamic programming? Explain with an example. [10 marks]
+2. Write an algorithm for binary search. [5 marks]
+3. What are the ACID properties of a database? [8 marks]
+..."></textarea>
+      </div>
+
+      <div id="file-tab" style="display:none">
+        <div class="file-drop" id="file-drop" onclick="document.getElementById('file-input').click()" ondragover="dragOver(event)" ondrop="dropFile(event)">
+          <i class="ti ti-file-text"></i>
+          <p>Click to choose a <strong>.txt</strong> file</p>
+          <span>or drag and drop here</span>
+          <input type="file" id="file-input" accept=".txt,.text" onchange="handleFile(event)" style="display:none">
+        </div>
+        <div id="file-name" class="file-name" style="display:none"></div>
+      </div>
+
+      <div class="api-row">
+        <label for="api-key"><i class="ti ti-key"></i> Anthropic API key <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Get one free <i class="ti ti-external-link"></i></a></label>
+        <input type="password" id="api-key" placeholder="sk-ant-..." autocomplete="off">
+        <p class="api-note">Your key is never stored — it stays in your browser only during this session.</p>
+      </div>
+
+      <button class="btn-process" id="process-btn" onclick="processQuestions()">
+        <i class="ti ti-sparkles"></i> Extract &amp; Organise with AI
+      </button>
+    </div>
+  </section>
+</div>
+
+<!-- APP (shown after processing) -->
+<div id="app" style="display:none">
+  <nav class="app-nav">
+    <div class="logo" onclick="backToHome()" style="cursor:pointer"><span class="logo-dot"></span>PYQ Organiser</div>
+    <div class="app-nav-right">
+      <span id="app-paper-name" class="paper-label"></span>
+      <button class="btn-ghost-sm" onclick="backToHome()"><i class="ti ti-plus"></i> New paper</button>
+    </div>
+  </nav>
+
+  <div class="app-body">
+    <aside class="sidebar">
+      <div class="progress-ring-wrap">
+        <svg viewBox="0 0 80 80" class="progress-ring">
+          <circle cx="40" cy="40" r="32" fill="none" stroke="#e5e7eb" stroke-width="6"/>
+          <circle cx="40" cy="40" r="32" fill="none" stroke="#6366f1" stroke-width="6"
+            stroke-dasharray="201" stroke-dashoffset="201" id="ring-fill"
+            stroke-linecap="round" transform="rotate(-90 40 40)"/>
+        </svg>
+        <div class="ring-text">
+          <span id="ring-pct">0%</span>
+          <small>done</small>
+        </div>
+      </div>
+
+      <div class="sidebar-stats">
+        <div class="sstat"><span id="ss-total">0</span><label>Questions</label></div>
+        <div class="sstat"><span id="ss-solved">0</span><label>Solved</label></div>
+        <div class="sstat"><span id="ss-topics">0</span><label>Topics</label></div>
+      </div>
+
+      <div class="sidebar-search">
+        <i class="ti ti-search"></i>
+        <input type="text" id="sidebar-search" placeholder="Search questions..." oninput="filterQuestions(this.value)">
+      </div>
+
+      <div class="topic-list" id="topic-list">
+        <!-- topics rendered here -->
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="content-header">
+        <div>
+          <h2 id="content-title">All questions</h2>
+          <p id="content-sub" class="content-sub"></p>
+        </div>
+        <div class="filter-row">
+          <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+          <button class="filter-btn" onclick="setFilter('unsolved', this)">Unsolved</button>
+          <button class="filter-btn" onclick="setFilter('solved', this)">Solved</button>
+        </div>
+      </div>
+
+      <div id="questions-list">
+        <!-- questions rendered here -->
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay" style="display:none">
+  <div class="loader-card">
+    <div class="loader-spinner"></div>
+    <h3>Analysing your paper...</h3>
+    <p id="loader-msg">Extracting questions</p>
+    <div class="loader-bar"><div id="loader-fill"></div></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
